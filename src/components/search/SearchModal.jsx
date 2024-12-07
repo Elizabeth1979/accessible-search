@@ -3,17 +3,19 @@ import { Dialog, DialogContent } from "../ui/dialog";
 import SearchTrigger from "./SearchTrigger";
 import SearchInput from "./SearchInput";
 import { useSearch } from "../../hooks/useSearch";
+import { useNavigate, Link } from "react-router-dom";
 
 const SearchModal = () => {
+  const navigate = useNavigate();
   const searchInputRef = useRef(null);
   const searchButtonRef = useRef(null);
   const { searchValue, isOpen, handleSearchChange, clearSearch, handleOpenChange, setIsOpen } =
     useSearch();
 
   const handleModalClose = useCallback(
-    (open) => {
+    (open, isNavigatingToSearch = false) => {
       handleOpenChange(open);
-      if (!open) {
+      if (!open && !isNavigatingToSearch) {
         const buttonToFocus = searchButtonRef.current;
         requestAnimationFrame(() => {
           buttonToFocus?.focus();
@@ -39,27 +41,22 @@ const SearchModal = () => {
           aria-modal="true"
         >
           <div className="p-6">
-            <form
-              role="search"
-              onSubmit={(e) => e.preventDefault()}
-              aria-label="Search products and collections"
-            >
-              <div className="flex items-center gap-4 mb-8">
-                <SearchInput
-                  value={searchValue}
-                  onChange={handleSearchChange}
-                  onClear={() => clearSearch(searchInputRef)}
-                  inputRef={searchInputRef}
-                />
-                <button
-                  onClick={() => handleModalClose(false)}
-                  className="px-4 py-2 border-2 border-gray-400 rounded-lg hover:border-gray-600 hover:bg-gray-50 transition-all duration-200 text-gray-700 font-medium"
-                  aria-label="Close search"
-                >
-                  Close
-                </button>
-              </div>
-            </form>
+            <div className="flex items-center gap-4 mb-8">
+              <SearchInput
+                value={searchValue}
+                onChange={handleSearchChange}
+                onClear={() => clearSearch(searchInputRef)}
+                inputRef={searchInputRef}
+                onSubmit={(isNavigatingToSearch) => handleModalClose(false, isNavigatingToSearch)}
+              />
+              <button
+                onClick={() => handleModalClose(false)}
+                className="px-4 py-2 border-2 border-gray-400 rounded-lg hover:border-gray-600 hover:bg-gray-50 transition-all duration-200 text-gray-700 font-medium"
+                aria-label="Close search"
+              >
+                Close
+              </button>
+            </div>
 
             {/* Search Results Section */}
             <div className="space-y-8" role="region" aria-label="Search results">
@@ -78,6 +75,8 @@ const SearchModal = () => {
                           onClick={(e) => {
                             e.preventDefault();
                             handleSearchChange({ target: { value: suggestion } });
+                            handleModalClose(false);
+                            navigate(`/search?q=${encodeURIComponent(suggestion)}`);
                           }}
                         >
                           {suggestion}
@@ -136,8 +135,15 @@ const SearchModal = () => {
                   ].map((product, index) => (
                     <div
                       key={index}
-                      className="group relative bg-white border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-200"
+                      className="group relative bg-white border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer"
                       role="listitem"
+                      onClick={(e) => {
+                        // Only trigger if the click wasn't on the title link
+                        if (!e.target.closest("a")) {
+                          handleModalClose(false);
+                          navigate(product.href);
+                        }
+                      }}
                     >
                       <div className="relative aspect-[7/8]">
                         <img
@@ -154,7 +160,13 @@ const SearchModal = () => {
                       <div className="p-4">
                         <a
                           href={product.href}
-                          className="block font-medium text-gray-900 group-hover:text-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+                          className="block font-medium text-gray-900 group-hover:text-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded relative z-10"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleModalClose(false);
+                            navigate(product.href);
+                          }}
                           aria-label={`View ${product.name} - ${product.description}`}
                         >
                           {product.name}
@@ -166,74 +178,92 @@ const SearchModal = () => {
                 </div>
               </div>
 
-              {/* Featured Collections */}
+              {/* Services */}
               <div>
-                <h2 className="text-xl font-semibold mb-4" id="collections-heading">
-                  Featured Collections
+                <h2 className="text-xl font-semibold mb-4" id="services-heading">
+                  Services
                 </h2>
                 <div
-                  className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                  className="grid grid-cols-1 md:grid-cols-3 gap-6"
                   role="list"
-                  aria-labelledby="collections-heading"
+                  aria-labelledby="services-heading"
                 >
                   {[
                     {
-                      title: "Summer Essentials",
-                      description: "Discover our curated collection for the perfect summer",
+                      title: "Web Development",
+                      description:
+                        "Custom web solutions built with modern technologies and accessibility in mind. Our team creates responsive, user-friendly websites that deliver exceptional experiences.",
+                      href: "/services/web-development",
                       image:
-                        "https://images.unsplash.com/photo-1617957718614-8c23f060c2d0?auto=format&fit=crop&w=800&h=400&q=80",
-                      itemCount: "32 items",
-                      href: "/collections/summer-essentials",
+                        "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&h=400&q=80",
                     },
                     {
-                      title: "Sustainable Living",
-                      description: "Eco-friendly products for a better tomorrow",
+                      title: "UI/UX Design",
+                      description:
+                        "Thoughtful design solutions that prioritize user experience and accessibility. We create intuitive interfaces that delight users while maintaining functionality.",
+                      href: "/services/ui-ux-design",
                       image:
-                        "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&h=400&q=80",
-                      itemCount: "28 items",
-                      href: "/collections/sustainable-living",
+                        "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&h=400&q=80",
                     },
-                  ].map((collection, index) => (
+                    {
+                      title: "Accessibility Consulting",
+                      description:
+                        "Expert guidance on making your digital products accessible to all users. We provide comprehensive audits and recommendations to ensure WCAG compliance.",
+                      href: "/services/accessibility-consulting",
+                      image:
+                        "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&h=400&q=80",
+                    },
+                  ].map((service, index) => (
                     <div
                       key={index}
-                      className="group relative bg-white border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-200"
+                      className="group bg-white border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer"
                       role="listitem"
+                      onClick={(e) => {
+                        // Only trigger if the click wasn't on the title link
+                        if (!e.target.closest("a")) {
+                          handleModalClose(false);
+                          navigate(service.href);
+                        }
+                      }}
                     >
-                      <div className="relative aspect-[2/1]">
+                      <div className="relative h-48">
                         <img
-                          src={collection.image}
+                          src={service.image}
                           alt=""
-                          className="w-full h-full object-cover brightness-[0.85] group-hover:brightness-[0.95] transition-all"
+                          className="w-full h-full object-cover brightness-90 group-hover:brightness-100 transition-all duration-200"
                           aria-hidden="true"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/40" />
-                        <div className="absolute inset-0 p-6 flex flex-col justify-end text-white">
-                          <a
-                            href={collection.href}
-                            className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
-                            aria-label={`View ${collection.title} collection - ${collection.description}`}
-                          >
-                            <h3 className="text-xl font-medium mb-2">{collection.title}</h3>
-                          </a>
-                          <p className="text-white/90 mb-3">{collection.description}</p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-white/80">{collection.itemCount}</span>
-                            <span className="text-sm font-medium group-hover:translate-x-1 transition-transform duration-200">
-                              View Collection →
-                            </span>
-                          </div>
-                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/30" />
+                      </div>
+                      <div className="p-6">
+                        <a
+                          href={service.href}
+                          className="block text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded relative z-10"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleModalClose(false);
+                            navigate(service.href);
+                          }}
+                        >
+                          {service.title}
+                        </a>
+                        <p className="text-gray-600 text-sm line-clamp-3">{service.description}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Show All Results Button */}
-              <div className="text-center">
-                <button className="border border-gray-300 rounded px-6 py-2 text-sm font-medium hover:bg-gray-50">
-                  Show All Search Results
-                </button>
+              {/* Primary Action Button */}
+              <div className="mt-8 flex justify-center">
+                <Link
+                  to={`/search?q=${encodeURIComponent(searchValue)}`}
+                  className="inline-flex items-center px-6 py-3 text-lg font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                  onClick={() => handleModalClose(false, true)}
+                >
+                  View all search results
+                </Link>
               </div>
             </div>
           </div>
