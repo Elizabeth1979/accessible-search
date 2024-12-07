@@ -1,0 +1,32 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Dialog styling */
+[role="dialog"] {
+  isolation: isolate;
+}
+
+[data-radix-portal] {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+header.bg-white {
+  z-index: 1;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.search-button {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.search-button:active {
+  transform: scale(0.98);
+}
